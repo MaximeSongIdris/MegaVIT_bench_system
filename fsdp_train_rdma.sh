@@ -16,6 +16,5 @@
 #SBATCH --time=00:30:00
 
 ## CODE EXECUTION
-export NCCL_NET_GDR_LEVEL=LOC
 echo $NCCL_NET_GDR_LEVEL
 time srun singularity exec --nv $PROJECT/test_multi_noeuds/pytorch-25.08-py3.sif python fsdp_train.py
