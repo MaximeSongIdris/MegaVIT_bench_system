@@ -1,0 +1,3 @@
+[submodule "MegaVIT"]
+	path = MegaVIT
+	url = https://github.com/kyegomez/MegaVIT.git
