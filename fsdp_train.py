@@ -1,5 +1,5 @@
 import os
-os.environ['PYTHONPATH'] = '/lustre/work/sos/ssos027/test_multi_noeuds/image/MegaVIT'
+#os.environ['PYTHONPATH'] = '/lustre/fswork/projects/idris/sos/ssos027/bench/MegaVIT_bench_system/MegaVIT'
 
 import math
 import torch
@@ -279,13 +279,13 @@ val_loss, val_acc = validate_epoch(model, val_loader, criterion, device)
 if is_main_process():
     print(f"Validation - Loss: {val_loss:.4f}, Acc: {val_acc:.4f}")
 
-"""
 # 5. Final Steps - Save only on main process
 if is_main_process():
-    # Save FSDP model state dict
-    save_policy = StateDictType.FULL_STATE_DICT
-    with FSDP.state_dict_type(model, save_policy):
-        state_dict = model.state_dict()
-        torch.save(state_dict, "mega_vit_model.pth")
-    print("Training finished. Model saved.")
-"""
+# Save FSDP model state dict
+save_policy = StateDictType.FULL_STATE_DICT
+with FSDP.state_dict_type(model, save_policy):
+    full_state_dict = model.state_dict()
+if is_main_process():
+    torch.save(full_state_dict, "mega_vit_model.pth")
+print("Training finished. Model saved.")
+
