@@ -25,5 +25,6 @@ module load pytorch-gpu/py3/2.8.0
 export PYTHONPATH=/lustre/fswork/projects/idris/sos/ssos027/bench/MegaVIT_bench_system/MegaVIT
 
 ## CODE EXECUTION
+export NCCL_NET_GDR_LEVEL=SYS
 echo $NCCL_NET_GDR_LEVEL
 time srun python fsdp_train.py

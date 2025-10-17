@@ -20,5 +20,6 @@
 export PYTHONPATH=/lustre/work/sos/ssos027/test_multi_noeuds/MegaVIT_bench_system/MegaVIT
 
 ## CODE EXECUTION
+export NCCL_NET_GDR_LEVEL=SYS
 echo $NCCL_NET_GDR_LEVEL
 time srun singularity exec --nv $PROJECT/test_multi_noeuds/pytorch-25.08-py3.sif python fsdp_train.py

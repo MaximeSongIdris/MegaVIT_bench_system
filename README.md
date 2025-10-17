@@ -14,11 +14,18 @@ MegaVIT has a dependency with Poetry, which we want to remove when installing on
 ```sh
 mv MegaVIT/pyproject.toml MegaVIT/pyproject_old.toml
 cp pyproject_MegaVIT.toml MegaVIT/pyproject.toml
+pip install -e ./MegaVIT
+```
+
+## Install PyTorch
+```sh
+pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu128
 ```
 
 ## Benchmark Results
 
-On DALIA, we are using a singularity container. RDMA deactivated...
+On DALIA, we are using a singularity container.
+On JZ, we are using an optimized installation of PyTorch.
 
 | Model                                       | Platform                                  | Configuration | Time   |
 |---------------------------------------------|-------------------------------------------|---------------|--------|
