@@ -15,6 +15,10 @@
 ## JOB ACCOUNTABILITY
 #SBATCH --time=00:30:00
 
+
+## ENV ACTIVATION
+export PYTHONPATH=/lustre/work/sos/ssos027/test_multi_noeuds/MegaVIT_bench_system/MegaVIT
+
 ## CODE EXECUTION
 export NCCL_NET_GDR_LEVEL=LOC
 echo $NCCL_NET_GDR_LEVEL

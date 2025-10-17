@@ -1,6 +1,4 @@
 import os
-#os.environ['PYTHONPATH'] = '/lustre/fswork/projects/idris/sos/ssos027/bench/MegaVIT_bench_system/MegaVIT'
-
 import math
 import torch
 import torch.nn as nn
@@ -265,23 +263,17 @@ def validate_epoch(model, loader, criterion, device):
 # Train for 1 epoch
 if is_main_process():
     print("\nStarting training for 1 epoch...")
-
-# Set epoch for sampler (important for proper shuffling)
 train_loader.sampler.set_epoch(0)
 
 train_loss, train_acc = train_epoch(model, train_loader, optimizer, criterion, device)
 if is_main_process():
     print(f"\nTraining completed - Loss: {train_loss:.4f}, Acc: {train_acc:.4f}")
 
-if is_main_process():
-    print("\nRunning validation...")
 val_loss, val_acc = validate_epoch(model, val_loader, criterion, device)
 if is_main_process():
     print(f"Validation - Loss: {val_loss:.4f}, Acc: {val_acc:.4f}")
 
 # 5. Final Steps - Save only on main process
-if is_main_process():
-# Save FSDP model state dict
 save_policy = StateDictType.FULL_STATE_DICT
 with FSDP.state_dict_type(model, save_policy):
     full_state_dict = model.state_dict()

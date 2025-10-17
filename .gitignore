@@ -1,1 +1,6 @@
-slurm_log/
+# IGNORE SPECIFIC FOLDERS
+/slurm_log/
+/data/
+
+# IGNORE FILES
+*.pth
