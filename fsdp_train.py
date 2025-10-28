@@ -41,23 +41,23 @@ def is_main_process():
 def setup():
     """Initialize distributed training with SLURM"""
     # SLURM environment variables
-    rank = int(os.environ.get("SLURM_PROCID", 0))   
+    rank = int(os.environ.get("SLURM_PROCID", 0))
     world_size = int(os.environ.get("SLURM_NTASKS", 1))
     local_rank = int(os.environ.get("SLURM_LOCALID", 0))
-    
+
     # Set environment variables for PyTorch
     os.environ["RANK"] = str(rank)
     os.environ["WORLD_SIZE"] = str(world_size)
-    
+
     if "SLURM_JOB_NODELIST" in os.environ:  # Get master address and port from SLURM
         hostnames = expand_hostlist(os.environ["SLURM_JOB_NODELIST"])
         master_addr = hostnames[0]
         os.environ["MASTER_ADDR"] = master_addr
     else:
         os.environ["MASTER_ADDR"] = "localhost"
-    
+
     os.environ["MASTER_PORT"] = str(10000 + int(os.environ["SLURM_JOB_ID"]) % 10000)
-    
+
     # Initialize process group
     dist.init_process_group(backend="nccl", init_method="env://")
     torch.cuda.set_device(local_rank)
@@ -107,6 +107,7 @@ val_sampler = torch.utils.data.distributed.DistributedSampler(
 )
 
 batch_size = 64
+#batch_size = 32
 batch_size_per_gpu = batch_size // get_world_size()
 train_loader = DataLoader(train_dataset,
                           batch_size=batch_size_per_gpu,
@@ -183,23 +184,23 @@ def train_epoch(model, loader, optimizer, criterion, device):
         pbar = tqdm(loader, desc="Training", leave=False)
     else:
         pbar = loader
-    
+
     for imgs, labels in pbar:
         imgs, labels = imgs.to(device, non_blocking=True), labels.to(device, non_blocking=True)
         optimizer.zero_grad()
-        
+
         outputs = model(imgs)
         loss = criterion(outputs, labels)
         loss.backward()
-        
+
         clip_grad_norm_(model.parameters(), 0.05)
         optimizer.step()
         scheduler.step()
-        
+
         total_loss += loss.item()
         _, predicted = outputs.max(1)
         correct += predicted.eq(labels).sum().item()
-        
+
         # Update progress bar with current metrics (only on main process)
         if is_main_process():
             pbar.set_postfix({
@@ -211,13 +212,13 @@ def train_epoch(model, loader, optimizer, criterion, device):
     # Gather metrics from all processes
     total_loss_tensor = torch.tensor([total_loss], device=device)
     correct_tensor = torch.tensor([correct], device=device)
-    
+
     dist.all_reduce(total_loss_tensor, op=dist.ReduceOp.SUM)
     dist.all_reduce(correct_tensor, op=dist.ReduceOp.SUM)
-        
+
     avg_loss = total_loss_tensor.item() / (total_steps*get_world_size())
     avg_acc = correct_tensor.item() / len(train_dataset)
-    
+
     return avg_loss, avg_acc
 
 def validate_epoch(model, loader, criterion, device):
@@ -234,10 +235,10 @@ def validate_epoch(model, loader, criterion, device):
     with torch.no_grad():
         for imgs, labels in pbar:
             imgs, labels = imgs.to(device, non_blocking=True), labels.to(device, non_blocking=True)
-            
+
             outputs = model(imgs)
             loss = criterion(outputs, labels)
-            
+
             total_loss += loss.item()
             _, predicted = outputs.max(1)
             correct += predicted.eq(labels).sum().item()
@@ -247,17 +248,17 @@ def validate_epoch(model, loader, criterion, device):
                 pbar.set_postfix({
                     'acc': f'{correct / ((pbar.n + 1) * loader.batch_size):.4f}'
                 })
-    
+
     # Gather metrics from all processes
     total_loss_tensor = torch.tensor([total_loss], device=device)
     correct_tensor = torch.tensor([correct], device=device)
-    
+
     dist.all_reduce(total_loss_tensor, op=dist.ReduceOp.SUM)
     dist.all_reduce(correct_tensor, op=dist.ReduceOp.SUM)
 
     avg_loss = total_loss_tensor.item() / (len(loader) * get_world_size())
     avg_acc = correct_tensor.item() / len(val_dataset)
-            
+
     return avg_loss, avg_acc
 
 # Train for 1 epoch
@@ -281,3 +282,5 @@ if is_main_process():
     torch.save(full_state_dict, "mega_vit_model.pth")
 print("Training finished. Model saved.")
 
+# 6. Cleanup
+cleanup()

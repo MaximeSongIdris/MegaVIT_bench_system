@@ -18,6 +18,8 @@
 
 ## ENV ACTIVATION
 
+nvidia-smi
+
 # !! Contents within this block are managed by 'conda init' !!
 __conda_setup="$('/lustre/work/sos/ssos027/miniconda3/bin/conda' 'shell.bash' 'hook' 2> /dev/null)"
 if [ $? -eq 0 ]; then
@@ -31,7 +33,7 @@ else
 fi
 unset __conda_setup
 
-conda activate base
+source $PROJECT/test_multi_noeuds/dalia_activate_env.sh
 export PYTHONPATH=/lustre/work/sos/ssos027/test_multi_noeuds/MegaVIT_bench_system/MegaVIT
 
 ## CODE EXECUTION
