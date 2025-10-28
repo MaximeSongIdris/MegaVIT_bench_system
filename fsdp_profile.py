@@ -16,8 +16,7 @@ from functools import partial
 from hostlist import expand_hostlist
 import torch.distributed as dist
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
-from torch.distributed.fsdp import ShardingStrategy, MixedPrecision
-from torch.distributed.fsdp import StateDictType
+from torch.distributed.fsdp import ShardingStrategy
 from torch.distributed.fsdp.wrap import size_based_auto_wrap_policy
 
 from torch.profiler import profile, tensorboard_trace_handler, ProfilerActivity, schedule
@@ -101,7 +100,7 @@ train_sampler = torch.utils.data.distributed.DistributedSampler(
     shuffle=True
 )
 
-batch_size = 64
+batch_size = 32
 batch_size_per_gpu = batch_size // get_world_size()
 train_loader = DataLoader(train_dataset,
                           batch_size=batch_size_per_gpu,
@@ -131,19 +130,20 @@ model = MegaVit(
 if is_main_process():
     print('Number of params: ', sum(p.numel() for p in model.parameters()))
 
-# Wrap policy for automatic sharding
-auto_wrap_policy = partial(
-    size_based_auto_wrap_policy,
-    min_num_params=1e9  # Wrap modules with at least 1B parameters
-)
+if get_world_size() > 1:  # Use FSDP in multi-gpus setting
+    # Wrap policy for automatic sharding
+    auto_wrap_policy = partial(
+        size_based_auto_wrap_policy,
+        min_num_params=1e9  # Wrap modules with at least 1B parameters
+    )
 
-# Wrap model with FSDP
-model = FSDP(
-    model,
-    sharding_strategy=ShardingStrategy.FULL_SHARD,
-    auto_wrap_policy=auto_wrap_policy,
-    device_id=device,
-)
+    # Wrap model with FSDP
+    model = FSDP(
+        model,
+        sharding_strategy=ShardingStrategy.FULL_SHARD,
+        auto_wrap_policy=auto_wrap_policy,
+        device_id=device,
+    )
 
 criterion = nn.CrossEntropyLoss()
 optimizer = Adam(model.parameters(), lr=0.0002)
@@ -185,11 +185,9 @@ def train_epoch(model, loader, optimizer, criterion, device):
         outputs = model(imgs)
         loss = criterion(outputs, labels)
         loss.backward()
-
         clip_grad_norm_(model.parameters(), 0.05)
         optimizer.step()
         scheduler.step()
-
         total_loss += loss.item()
         _, predicted = outputs.max(1)
         correct += predicted.eq(labels).sum().item()

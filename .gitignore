@@ -1,5 +1,6 @@
 # IGNORE SPECIFIC FOLDERS
 /slurm_log/
+/profile/
 /data/
 
 # IGNORE FILES

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ## JOB INFO
-#SBATCH --job-name=fsdp_train_1GPUs
+#SBATCH --job-name=fsdp_profile_1GPU
 #SBATCH --output=slurm_log/%x_%j.out
 #SBATCH --error=slurm_log/%x_%j.out
 
