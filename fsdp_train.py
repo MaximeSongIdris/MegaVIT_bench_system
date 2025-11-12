@@ -283,9 +283,13 @@ if is_main_process():
     print(f"Validation - Loss: {val_loss:.4f}, Acc: {val_acc:.4f}")
 
 # 5. Final Steps - Save only on main process
-save_policy = StateDictType.FULL_STATE_DICT
-with FSDP.state_dict_type(model, save_policy):
+if get_world_size() > 1:
+    save_policy = StateDictType.FULL_STATE_DICT
+    with FSDP.state_dict_type(model, save_policy):
+        full_state_dict = model.state_dict()
+else:
     full_state_dict = model.state_dict()
+
 if is_main_process():
     torch.save(full_state_dict, "mega_vit_model.pth")
 print("Training finished. Model saved.")
