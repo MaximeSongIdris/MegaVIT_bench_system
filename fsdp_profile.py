@@ -22,6 +22,14 @@ from torch.distributed.fsdp.wrap import size_based_auto_wrap_policy
 from torch.profiler import profile, tensorboard_trace_handler, ProfilerActivity, schedule
 
 
+# Control TF32 behavior (affects Tensor Core FP32 usage)
+torch.backends.cuda.matmul.allow_tf32 = True  # or False
+torch.backends.cudnn.allow_tf32 = True        # or False
+
+# Prefer Tensor Core precision
+torch.set_float32_matmul_precision("high")  # allows TF32
+
+
 # 0. Setup DDP and FSDP for SLURM
 def cleanup():
     """Clean up distributed training"""
@@ -100,7 +108,7 @@ train_sampler = torch.utils.data.distributed.DistributedSampler(
     shuffle=True
 )
 
-batch_size = 32
+batch_size = 32  # ~ 150 Go on 1 GPU
 batch_size_per_gpu = batch_size // get_world_size()
 train_loader = DataLoader(train_dataset,
                           batch_size=batch_size_per_gpu,
