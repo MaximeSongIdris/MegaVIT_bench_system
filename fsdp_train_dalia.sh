@@ -1,14 +1,14 @@
 #!/bin/bash
 
 ## JOB INFO
-#SBATCH --job-name=fsdp_train_2GPUs
+#SBATCH --job-name=fsdp_train_16GPUs
 #SBATCH --output=slurm_log/%x_%j.out
 #SBATCH --error=slurm_log/%x_%j.out
 
 ## NODE CONFIGURATION
-#SBATCH --nodes=2
-#SBATCH --gres=gpu:1
-#SBATCH --ntasks-per-node=1
+#SBATCH --nodes=4
+#SBATCH --gres=gpu:4
+#SBATCH --ntasks-per-node=4
 #SBATCH --cpus-per-task=36
 #SBATCH --hint=nomultithread
 
@@ -22,4 +22,4 @@ export PYTHONPATH=/lustre/work/sos/ssos027/test_multi_noeuds/MegaVIT_bench_syste
 ## CODE EXECUTION
 export NCCL_NET_GDR_LEVEL=LOC
 echo $NCCL_NET_GDR_LEVEL
-time srun singularity exec --nv $PROJECT/test_multi_noeuds/pytorch-25.08-py3.sif python fsdp_train.py
+time srun singularity exec --nv $WORK/test_multi_noeuds/pytorch-25.08-py3.sif python fsdp_train.py

@@ -16,4 +16,4 @@
 #SBATCH --time=00:30:00
 
 ## CODE EXECUTION
-time srun singularity exec --nv $PROJECT/test_multi_noeuds/pytorch-25.08-py3.sif python test_dataset.py
+time srun singularity exec --nv $WORK/test_multi_noeuds/pytorch-25.08-py3.sif python test_dataset.py

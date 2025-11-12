@@ -33,7 +33,7 @@ else
 fi
 unset __conda_setup
 
-source $PROJECT/test_multi_noeuds/dalia_activate_env.sh
+source $WORK/test_multi_noeuds/dalia_activate_env.sh
 export PYTHONPATH=/lustre/work/sos/ssos027/test_multi_noeuds/MegaVIT_bench_system/MegaVIT
 
 ## CODE EXECUTION

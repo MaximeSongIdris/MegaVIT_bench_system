@@ -1,14 +1,14 @@
 #!/bin/bash
 
 ## JOB INFO
-#SBATCH --job-name=fsdp_train_2GPUs
+#SBATCH --job-name=fsdp_train_conda_custom_16GPUs
 #SBATCH --output=slurm_log/%x_%j.out
 #SBATCH --error=slurm_log/%x_%j.out
 
 ## NODE CONFIGURATION
-#SBATCH --nodes=2
-#SBATCH --gres=gpu:1
-#SBATCH --ntasks-per-node=1
+#SBATCH --nodes=4
+#SBATCH --gres=gpu:4
+#SBATCH --ntasks-per-node=4
 #SBATCH --cpus-per-task=36
 #SBATCH --hint=nomultithread
 
@@ -33,7 +33,7 @@ else
 fi
 unset __conda_setup
 
-source $PROJECT/test_multi_noeuds/dalia_activate_env.sh
+source $WORK/test_multi_noeuds/dalia_activate_env.sh
 export PYTHONPATH=/lustre/work/sos/ssos027/test_multi_noeuds/MegaVIT_bench_system/MegaVIT
 
 ## CODE EXECUTION
