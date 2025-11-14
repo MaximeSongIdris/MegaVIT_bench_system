@@ -1,5 +1,6 @@
 import os
 import math
+import time
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -272,11 +273,15 @@ def validate_epoch(model, loader, criterion, device):
 # Train for 1 epoch
 if is_main_process():
     print("\nStarting training for 1 epoch...")
-train_loader.sampler.set_epoch(0)
+    start_time = time.time()
 
+train_loader.sampler.set_epoch(0)
 train_loss, train_acc = train_epoch(model, train_loader, optimizer, criterion, device)
+dist.barrier()  # synchronize GPUs
+
 if is_main_process():
     print(f"\nTraining completed - Loss: {train_loss:.4f}, Acc: {train_acc:.4f}")
+    print(f"\nTime: {time.time() - start_time}")
 
 val_loss, val_acc = validate_epoch(model, val_loader, criterion, device)
 if is_main_process():
