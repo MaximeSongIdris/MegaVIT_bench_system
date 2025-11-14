@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, random_split
 from torchvision import datasets, transforms
-from torch.optim import Adam
+from torch.optim import SGD
 from torch.optim.lr_scheduler import LambdaLR
 from torch.nn.utils import clip_grad_norm_
 from tqdm import tqdm
@@ -117,8 +117,8 @@ val_sampler = torch.utils.data.distributed.DistributedSampler(
     shuffle=False
 )
 
-batch_size = 32  # ~ 150 Go on 1 GPU
-batch_size_per_gpu = batch_size // get_world_size()
+batch_size_per_gpu = 16
+batch_size = batch_size_per_gpu * get_world_size()  # 32 + Adam ~ 150 Go on 1 GPU
 train_loader = DataLoader(train_dataset,
                           batch_size=batch_size_per_gpu,
                           sampler=train_sampler,
@@ -151,6 +151,7 @@ model = MegaVit(
     emb_dropout = 0.1
 ).to(device)
 if is_main_process():
+    """
     with torch.no_grad():
         # Compute FLOPS
         from fvcore.nn import FlopCountAnalysis
@@ -158,7 +159,7 @@ if is_main_process():
         imgs = imgs.to(device, non_blocking=True)
         flops = FlopCountAnalysis(model, imgs)
         print(f"Total forward FLOPS: {flops.total()}")  # Total floating point operations
-
+    """
     # Number of params
     print('Number of params: ', sum(p.numel() for p in model.parameters()))
 
@@ -178,7 +179,7 @@ if get_world_size() > 1:  # Use FSPD in multi-gpus setting
     )
 
 criterion = nn.CrossEntropyLoss()
-optimizer = Adam(model.parameters(), lr=0.0002)
+optimizer = SGD(model.parameters(), lr=0.0002)
 warmup_steps = int(0.1 * total_steps)
 
 # Warm-up + Cosine schedule for the learning rate
