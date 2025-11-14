@@ -151,6 +151,15 @@ model = MegaVit(
     emb_dropout = 0.1
 ).to(device)
 if is_main_process():
+    with torch.no_grad():
+        # Compute FLOPS
+        from fvcore.nn import FlopCountAnalysis
+        imgs, _ = next(iter(train_loader))
+        imgs = imgs.to(device, non_blocking=True)
+        flops = FlopCountAnalysis(model, imgs)
+        print(f"Total forward FLOPS: {flops.total()}")  # Total floating point operations
+
+    # Number of params
     print('Number of params: ', sum(p.numel() for p in model.parameters()))
 
 if get_world_size() > 1:  # Use FSPD in multi-gpus setting
@@ -167,13 +176,6 @@ if get_world_size() > 1:  # Use FSPD in multi-gpus setting
         auto_wrap_policy=auto_wrap_policy,
         device_id=device,
     )
-
-# Compute FLOPS
-from fvcore.nn import FlopCountAnalysis
-imgs, _ = next(iter(train_loader))
-imgs = imgs.to(device, non_blocking=True)
-flops = FlopCountAnalysis(model, imgs)
-print(f"Total forward FLOPS: {flops.total()}")  # Total floating point operations
 
 criterion = nn.CrossEntropyLoss()
 optimizer = Adam(model.parameters(), lr=0.0002)
