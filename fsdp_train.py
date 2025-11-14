@@ -20,6 +20,8 @@ from torch.distributed.fsdp import ShardingStrategy
 from torch.distributed.fsdp import StateDictType
 from torch.distributed.fsdp.wrap import size_based_auto_wrap_policy
 
+from torch.profiler import profile, tensorboard_trace_handler, ProfilerActivity, schedule
+
 
 # Control TF32 behavior (affects Tensor Core FP32 usage)
 torch.backends.cuda.matmul.allow_tf32 = True  # or False
@@ -165,6 +167,13 @@ if get_world_size() > 1:  # Use FSPD in multi-gpus setting
         device_id=device,
     )
 
+# Compute FLOPS
+from fvcore.nn import FlopCountAnalysis
+imgs, _ = next(iter(train_loader))
+imgs = imgs.to(device, non_blocking=True)
+flops = FlopCountAnalysis(model, imgs)
+print(f"Total forward FLOPS: {flops.total()}")  # Total floating point operations
+
 criterion = nn.CrossEntropyLoss()
 optimizer = Adam(model.parameters(), lr=0.0002)
 warmup_steps = int(0.1 * total_steps)
@@ -187,6 +196,12 @@ def train_epoch(model, loader, optimizer, criterion, device):
     total_loss = 0
     correct = 0
 
+    prof = profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
+        schedule=schedule(wait=1, warmup=1, active=8, repeat=1),
+        on_trace_ready=tensorboard_trace_handler(f"./profile/"),
+        profile_memory=True)
+    prof.start()
+    
     # Only show progress bar on main process
     if is_main_process():
         pbar = tqdm(loader, desc="Training", leave=False)
@@ -216,6 +231,8 @@ def train_epoch(model, loader, optimizer, criterion, device):
                 'acc': f'{correct / ((pbar.n + 1) * loader.batch_size):.4f}',
                 'lr': f'{scheduler.get_last_lr()[0]:.6f}'
             })
+        prof.step()
+    prof.stop()
 
     # Gather metrics from all processes
     total_loss_tensor = torch.tensor([total_loss], device=device)
