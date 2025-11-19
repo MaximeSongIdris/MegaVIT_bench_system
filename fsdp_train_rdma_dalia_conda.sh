@@ -1,19 +1,20 @@
 #!/bin/bash
 
 ## JOB INFO
-#SBATCH --job-name=fsdp_train_2GPUs
+#SBATCH --job-name=fsdp_train_rdma_conda_16GPUs
 #SBATCH --output=slurm_log/%x_%j.out
 #SBATCH --error=slurm_log/%x_%j.out
 
 ## NODE CONFIGURATION
-#SBATCH --nodes=2
-#SBATCH --gres=gpu:1
-#SBATCH --ntasks-per-node=1
+#SBATCH --nodes=4
+#SBATCH --gres=gpu:4
+#SBATCH --ntasks-per-node=4
 #SBATCH --cpus-per-task=36
 #SBATCH --hint=nomultithread
 
 ## JOB ACCOUNTABILITY
 #SBATCH --time=02:00:00
+#SBATCH --array=0-2
 
 
 ## ENV ACTIVATION
@@ -33,10 +34,14 @@ else
 fi
 unset __conda_setup
 
-source $WORK/test_multi_noeuds/dalia_activate_env.sh
+#source $WORK/test_multi_noeuds/dalia_activate_env.sh
 export PYTHONPATH=/lustre/work/sos/ssos027/test_multi_noeuds/MegaVIT_bench_system/MegaVIT
 
 ## CODE EXECUTION
 export NCCL_NET_GDR_LEVEL=SYS
 echo $NCCL_NET_GDR_LEVEL
+export NCCL_MNNVL_ENABLE=1
+echo $NCCL_MNNVL_ENABLE
+export NCCL_DEBUG=INFO
+
 time srun python fsdp_train.py

@@ -39,4 +39,8 @@ export PYTHONPATH=/lustre/work/sos/ssos027/test_multi_noeuds/MegaVIT_bench_syste
 ## CODE EXECUTION
 export NCCL_NET_GDR_LEVEL=LOC
 echo $NCCL_NET_GDR_LEVEL
+export NCCL_MNNVL_ENABLE=0
+echo $NCCL_MNNVL_ENABLE
+export NCCL_DEBUG=INFO
+
 time srun python fsdp_profile.py

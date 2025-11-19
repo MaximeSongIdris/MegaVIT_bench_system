@@ -27,4 +27,6 @@ export PYTHONPATH=/lustre/fswork/projects/idris/sos/ssos027/bench/MegaVIT_bench_
 ## CODE EXECUTION
 export NCCL_NET_GDR_LEVEL=LOC
 echo $NCCL_NET_GDR_LEVEL
+export NCCL_DEBUG=INFO
+
 time srun python fsdp_train.py

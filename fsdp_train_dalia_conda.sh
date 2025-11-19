@@ -14,7 +14,7 @@
 
 ## JOB ACCOUNTABILITY
 #SBATCH --time=02:00:00
-
+#SBATCH --array=0-2
 
 ## ENV ACTIVATION
 
@@ -39,4 +39,8 @@ export PYTHONPATH=/lustre/work/sos/ssos027/test_multi_noeuds/MegaVIT_bench_syste
 ## CODE EXECUTION
 export NCCL_NET_GDR_LEVEL=LOC
 echo $NCCL_NET_GDR_LEVEL
-time srun python fsdp_train.py
+export NCCL_MNNVL_ENABLE=0
+echo $NCCL_MNNVL_ENABLE
+export NCCL_DEBUG=INFO
+
+time srun python -u fsdp_train.py
