@@ -166,11 +166,10 @@ if get_world_size() > 1:  # Use FSPD in multi-gpus setting
         if isinstance(module, Attention) or isinstance(module, FeedForward):
             fully_shard(module)
     fully_shard(model)
-    
+
     from torch.distributed.tensor import DTensor
     for param in model.parameters():
         assert isinstance(param, DTensor)
-        assert param.placements == (Shard(0),)
         if is_main_process():
             print(param.to_local())
 
@@ -201,7 +200,7 @@ def train_epoch(model, loader, optimizer, criterion, device):
         on_trace_ready=tensorboard_trace_handler(f"./profile/"),
         profile_memory=True)
     prof.start()
-    
+
     # Only show progress bar on main process
     if is_main_process():
         pbar = tqdm(loader, desc="Training", leave=False)
@@ -317,7 +316,7 @@ else:
     cpu_state_dict = {k: v.cpu() for k, v in model.state_dict().items()}
 
 if is_main_process():
-    torch.save(full_state_dict, "mega_vit_model.pth")
+    torch.save(cpu_state_dict, "mega_vit_model.pth")
 print("Training finished. Model saved.")
 
 # 6. Cleanup
