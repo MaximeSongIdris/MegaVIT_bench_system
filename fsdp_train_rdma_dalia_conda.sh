@@ -1,12 +1,12 @@
 #!/bin/bash
 
 ## JOB INFO
-#SBATCH --job-name=fsdp_train_rdma_conda_16GPUs
+#SBATCH --job-name=fsdp_train_rdma_conda_8GPUs
 #SBATCH --output=slurm_log/%x_%j.out
 #SBATCH --error=slurm_log/%x_%j.out
 
 ## NODE CONFIGURATION
-#SBATCH --nodes=4
+#SBATCH --nodes=2
 #SBATCH --gres=gpu:4
 #SBATCH --ntasks-per-node=4
 #SBATCH --cpus-per-task=36
@@ -14,7 +14,7 @@
 
 ## JOB ACCOUNTABILITY
 #SBATCH --time=02:00:00
-#SBATCH --array=0-2
+##SBATCH --array=0-2
 
 
 ## ENV ACTIVATION
@@ -34,7 +34,7 @@ else
 fi
 unset __conda_setup
 
-#source $WORK/test_multi_noeuds/dalia_activate_env.sh
+source $WORK/test_multi_noeuds/dalia_activate_env.sh
 export PYTHONPATH=/lustre/work/sos/ssos027/test_multi_noeuds/MegaVIT_bench_system/MegaVIT
 
 ## CODE EXECUTION
@@ -43,5 +43,9 @@ echo $NCCL_NET_GDR_LEVEL
 export NCCL_MNNVL_ENABLE=1
 echo $NCCL_MNNVL_ENABLE
 export NCCL_DEBUG=INFO
+#export NCCL_DEBUG_SUBSYS=ALL
+#export NNCL_MAX_NCHANNELS=8
 
+#export CUDA_LAUNCH_BLOCKING=1  # synchroneous GPU kernels for debug
+ulimit -s 8192  # issue with thread stack when using a lot of GPUs
 time srun python fsdp_train.py

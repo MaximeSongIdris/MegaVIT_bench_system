@@ -32,7 +32,7 @@ torch.backends.cudnn.allow_tf32 = True        # or False
 torch.set_float32_matmul_precision("high")  # allows TF32
 
 
-# 0. Setup DDP and FSDP for SLURM
+# 0. Distributed Training Setup (SLURM/NCCL)
 def cleanup():
     """Clean up distributed training"""
     dist.destroy_process_group()
@@ -177,6 +177,16 @@ if get_world_size() > 1:  # Use FSPD in multi-gpus setting
         auto_wrap_policy=auto_wrap_policy,
         device_id=device,
     )
+
+    # Display the gradient of the shard on this GPU
+    print(model._flat_param.grad)
+
+    # Display only the local tensor (TODO)
+    if get_rank() == 0:
+        from torch.distributed.tensor import DTensor
+        for param in model.parameters():
+            if isinstance(param, DTensor):
+                param.to_local()
 
 criterion = nn.CrossEntropyLoss()
 optimizer = SGD(model.parameters(), lr=0.0002)

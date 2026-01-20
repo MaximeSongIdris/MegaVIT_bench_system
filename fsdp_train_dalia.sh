@@ -26,4 +26,6 @@ export NCCL_MNNVL_ENABLE=0
 echo $NCCL_MNNVL_ENABLE
 export NCCL_DEBUG=INFO
 
+#export CUDA_LAUNCH_BLOCKING=1  # synchroneous GPU kernels for debug
+ulimit -s 8192  # issue with thread stack when using a lot of GPUs
 time srun singularity exec --nv $WORK/test_multi_noeuds/pytorch-25.08-py3.sif python fsdp_train.py
