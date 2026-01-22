@@ -48,24 +48,36 @@ def is_main_process():
     return get_rank() == 0
 
 def setup():
-    """Initialize distributed training with SLURM"""
+    """Initialize distributed training.
+
+    With SLURM:
+        All environment variables (SLURM_JOB_NODELIST, SLURM_JOB_ID, SLURM_NTASKS, etc.)
+        are automatically set by the scheduler. The master port is derived from SLURM_JOB_ID
+        to minimize the chance of using an already allocated port.
+
+    Without SLURM (we suppose that it is a mono-gpu script):
+        Defaults to localhost with a random port. For multiple single-GPU scripts on the
+        same node, set job to select the GPU for each script:
+            CUDA_VISIBLE_DEVICES=0 python FSDP_sAC.py
+
+    Returns:
+        torch.device: The CUDA device assigned to this process.
+    """
     # SLURM environment variables
-    rank = int(os.environ.get("SLURM_PROCID", 0))
+    master_addr = expand_hostlist(str(os.environ.get("SLURM_JOB_NODELIST", "localhost")))[0]
+    master_port = 10000 + int(os.environ.get("SLURM_JOB_ID", random.randint(0, 9999))) % 10000
     world_size = int(os.environ.get("SLURM_NTASKS", 1))
+    n_nodes = int(os.environ.get("SLURM_JOB_NUM_NODES", 1))
+    gpus_per_node = int(os.environ.get("SLURM_GPUS_ON_NODE", 1))
+    node_id = int(os.environ.get("SLURM_NODEID", 0))
+    rank = int(os.environ.get("SLURM_PROCID", 0))
     local_rank = int(os.environ.get("SLURM_LOCALID", 0))
 
     # Set environment variables for PyTorch
     os.environ["RANK"] = str(rank)
     os.environ["WORLD_SIZE"] = str(world_size)
-
-    if "SLURM_JOB_NODELIST" in os.environ:  # Get master address and port from SLURM
-        hostnames = expand_hostlist(os.environ["SLURM_JOB_NODELIST"])
-        master_addr = hostnames[0]
-        os.environ["MASTER_ADDR"] = master_addr
-    else:
-        os.environ["MASTER_ADDR"] = "localhost"
-
-    os.environ["MASTER_PORT"] = str(10000 + int(os.environ["SLURM_JOB_ID"]) % 10000)
+    os.environ["MASTER_ADDR"] = str(master_addr)
+    os.environ["MASTER_PORT"] = str(master_port)
 
     # Initialize process group
     dist.init_process_group(backend="nccl", init_method="env://")
@@ -74,14 +86,14 @@ def setup():
     # Summary
     if is_main_process():
         PREFIX = "%i - " % rank
-        print(PREFIX + "Number of nodes: %i" % int(os.environ["SLURM_JOB_NUM_NODES"]))
-        print(PREFIX + "Node ID        : %i" % int(os.environ["SLURM_NODEID"]))
-        print(PREFIX + "World size     : %i" % world_size)
-        print(PREFIX + "GPUs per node  : %i" % int(os.environ["SLURM_GPUS_ON_NODE"]))
-        print(PREFIX + "Local rank     : %i" % local_rank)
         print(PREFIX + "Master node    : %s" % master_addr)
+        print(PREFIX + "Port           : %s" % master_port)
+        print(PREFIX + "World size     : %i" % world_size)
+        print(PREFIX + "Number of nodes: %i" % n_nodes)
+        print(PREFIX + "GPUs per node  : %i" % gpus_per_node)
         print(PREFIX + "Hostname       : %s" % socket.gethostname())
-        print(PREFIX + "Port           : %s" % os.environ["MASTER_PORT"])
+        print(PREFIX + "Node ID        : %i" % node_id)
+        print(PREFIX + "Local rank     : %i" % local_rank)
 
     return torch.device(f'cuda:{local_rank}')
 
